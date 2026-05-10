@@ -29,9 +29,12 @@ services:
       FORGEJO__server__ROOT_URL: https://${FORGEJO_DOMAIN}/
       FORGEJO__server__SSH_DOMAIN: ${FORGEJO_DOMAIN}
       FORGEJO__server__SSH_PORT: "22"
-      # Note: do NOT set START_SSH_SERVER=true — the official image already
-      # runs OpenSSH on :22 with the proper AuthorizedKeysCommand wired to
-      # Forgejo. Enabling the built-in Go SSH server causes a port conflict.
+      # The official image already runs OpenSSH on :22 with the proper
+      # AuthorizedKeysCommand wired to Forgejo. Forgejo's built-in Go SSH
+      # server must stay off, otherwise both fight for :22 and crash.
+      # Must be explicitly "false" — once written to app.ini at install,
+      # removing the env var alone does not unset it.
+      FORGEJO__server__START_SSH_SERVER: "false"
       FORGEJO__service__DISABLE_REGISTRATION: "true"
       FORGEJO__service__REQUIRE_SIGNIN_VIEW: "true"
       FORGEJO__mailer__ENABLED: "true"
