@@ -130,6 +130,10 @@ services:
       forgejo:
         condition: service_healthy
     user: "1000:1000"
+    # GID of the host's `docker` group, so the runner can talk to docker.sock.
+    # Check on the host: `getent group docker` and adjust if it differs.
+    group_add:
+      - "988"
     environment:
       FORGEJO_INSTANCE_URL: http://forgejo:3000
     volumes:
