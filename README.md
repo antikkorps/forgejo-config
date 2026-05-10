@@ -3,6 +3,21 @@
 Self-hosted Forgejo behind Cloudflare Tunnel, with PostgreSQL,
 encrypted restic backups to Cloudflare R2, and Tailscale-only admin SSH.
 
+## Accessing the server
+
+| Purpose | How |
+|---------|-----|
+| **Admin SSH** | `ssh -p 2222 root@<tailscale-name-or-ip>` (Tailscale only — port 2222 is closed on the public IP) |
+| **Git over SSH** | `git clone git@git.fvienot.link:user/repo.git` (port 22, public) |
+| **Web UI** | https://git.fvienot.link (Cloudflare Tunnel — no public 80/443) |
+
+The host SSH daemon was moved from port 22 to **2222** during bootstrap so
+that port 22 is free for Forgejo's built-in SSH server. Port 2222 is only
+reachable via the Tailscale interface (`tailscale0`).
+
+If you ever lose Tailscale access, recovery requires Hetzner console access
+(VNC) to restore SSH.
+
 ## Architecture
 
 ```
