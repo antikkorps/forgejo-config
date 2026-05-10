@@ -45,8 +45,9 @@ services:
       FORGEJO__mailer__PASSWD: ${RESEND_API_KEY}
       FORGEJO__mailer__FROM: ${MAIL_FROM}
     volumes:
-      - ./data/forgejo:/var/lib/gitea
-      - ./data/forgejo-config:/etc/gitea
+      # Single /data volume — the official Forgejo image puts everything
+      # (config, repos, ssh keys, attachments, LFS) under /data.
+      - ./data/forgejo:/data
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     ports:

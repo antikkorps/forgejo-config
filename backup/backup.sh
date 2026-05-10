@@ -45,7 +45,6 @@ restic backup \
 	--host "$(hostname)" \
 	"$DUMP_DIR/forgejo.dump" \
 	./data/forgejo \
-	./data/forgejo-config \
 	|| fail "restic backup"
 
 # 4. Retention — note: NO --prune. R2 Object Lock (30d) prevents

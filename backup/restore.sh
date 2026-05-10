@@ -25,9 +25,8 @@ echo "==> stopping forgejo"
 docker compose stop forgejo
 
 echo "==> restoring file data"
-rm -rf ./data/forgejo ./data/forgejo-config
+rm -rf ./data/forgejo
 cp -a "$RESTORE_DIR"/*/data/forgejo ./data/forgejo
-cp -a "$RESTORE_DIR"/*/data/forgejo-config ./data/forgejo-config
 
 echo "==> restoring postgres dump"
 DUMP_PATH=$(find "$RESTORE_DIR" -name 'forgejo.dump' | head -n1)

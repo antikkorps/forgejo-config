@@ -43,7 +43,12 @@ DUMP_PATH=$(find "$WORK_DIR" -name 'forgejo.dump' | head -n1)
 
 DATA_DIR=$(find "$WORK_DIR" -type d -name forgejo -path '*/data/*' | head -n1)
 [ -n "$DATA_DIR" ] || fail "no data/forgejo dir in snapshot"
-[ -d "$DATA_DIR/git" ] || fail "data/forgejo/git missing — snapshot looks incomplete"
+
+# app.ini is created at install. Its presence is a reliable signal that the
+# backup captured a real Forgejo state. Don't check for data/forgejo/git —
+# that dir only appears after the first repository is created.
+APP_INI=$(find "$DATA_DIR" -type f -name app.ini | head -n1)
+[ -n "$APP_INI" ] && [ -s "$APP_INI" ] || fail "app.ini missing or empty in snapshot"
 
 echo "==> spinning throwaway postgres"
 docker run -d --name "$PG_CONTAINER" \
