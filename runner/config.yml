@@ -1,0 +1,32 @@
+# Forgejo Actions runner config.
+# Docs: https://forgejo.org/docs/latest/admin/actions/
+
+log:
+  level: info
+
+runner:
+  file: .runner
+  capacity: 2
+  timeout: 1h
+  shutdown_timeout: 30s
+  fetch_timeout: 5s
+  fetch_interval: 2s
+  labels:
+    - "docker:docker://node:20-bookworm"
+    - "ubuntu-latest:docker://node:20-bookworm"
+
+cache:
+  enabled: true
+  dir: /data/cache
+
+container:
+  network: forgejo_internal
+  privileged: false
+  options: ""
+  workdir_parent: /workspace
+  valid_volumes: []
+  docker_host: "unix:///var/run/docker.sock"
+  force_pull: false
+
+host:
+  workdir_parent: /workspace

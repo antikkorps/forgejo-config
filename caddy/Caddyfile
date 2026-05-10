@@ -1,0 +1,17 @@
+# Caddy sits behind cloudflared (TLS terminated at Cloudflare edge).
+# It serves plain HTTP on the internal network — no certificates needed here.
+
+:80 {
+	encode zstd gzip
+
+	# Larger uploads for git push / LFS
+	request_body {
+		max_size 500MB
+	}
+
+	reverse_proxy forgejo:3000 {
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto https
+	}
+}

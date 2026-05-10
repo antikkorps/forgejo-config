@@ -1,0 +1,11 @@
+# Install on the VM with: crontab backup/crontab
+# Adjust the path if you deployed elsewhere.
+
+# Daily backup at 03:17 UTC
+17 3 * * * /opt/forgejo/backup/backup.sh >> /var/log/forgejo-backup.log 2>&1
+
+# Weekly integrity check (Sundays 04:00 UTC)
+0 4 * * 0 cd /opt/forgejo && set -a && . ./.env && set +a && restic check >> /var/log/forgejo-backup.log 2>&1
+
+# Monthly restore test (1st of the month, 04:30 UTC)
+30 4 1 * * /opt/forgejo/backup/restore-test.sh >> /var/log/forgejo-backup.log 2>&1
