@@ -99,7 +99,7 @@ The runner needs a one-time registration token from your Forgejo instance.
        --instance http://forgejo:3000 \
        --token <REGISTRATION_TOKEN> \
        --name vm-runner \
-       --labels docker:docker://node:20-bookworm
+       --labels docker:docker://node:24-bookworm
    ```
    (Run this on the same docker network: add `--network forgejo_web` if needed,
    or use the public URL `https://git.fvienot.link` instead of the internal one.)

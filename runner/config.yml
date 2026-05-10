@@ -12,8 +12,8 @@ runner:
   fetch_timeout: 5s
   fetch_interval: 2s
   labels:
-    - "docker:docker://node:20-bookworm"
-    - "ubuntu-latest:docker://node:20-bookworm"
+    - "docker:docker://node:24-bookworm"
+    - "ubuntu-latest:docker://node:24-bookworm"
 
 cache:
   enabled: true
