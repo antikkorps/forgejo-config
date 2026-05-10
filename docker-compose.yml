@@ -29,8 +29,9 @@ services:
       FORGEJO__server__ROOT_URL: https://${FORGEJO_DOMAIN}/
       FORGEJO__server__SSH_DOMAIN: ${FORGEJO_DOMAIN}
       FORGEJO__server__SSH_PORT: "22"
-      FORGEJO__server__START_SSH_SERVER: "true"
-      FORGEJO__server__SSH_LISTEN_PORT: "22"
+      # Note: do NOT set START_SSH_SERVER=true — the official image already
+      # runs OpenSSH on :22 with the proper AuthorizedKeysCommand wired to
+      # Forgejo. Enabling the built-in Go SSH server causes a port conflict.
       FORGEJO__service__DISABLE_REGISTRATION: "true"
       FORGEJO__service__REQUIRE_SIGNIN_VIEW: "true"
       FORGEJO__mailer__ENABLED: "true"
