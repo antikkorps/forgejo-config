@@ -93,7 +93,7 @@ The runner needs a one-time registration token from your Forgejo instance.
    ```
    docker run --rm -it \
      -v "$PWD/data/runner:/data" \
-     code.forgejo.org/forgejo/runner:6 \
+     code.forgejo.org/forgejo/runner:12 \
      forgejo-runner register \
        --no-interactive \
        --instance http://forgejo:3000 \
@@ -145,11 +145,58 @@ register with a different name (e.g. `home-runner`) and labels
 
 ## Day-to-day
 
-- **Update Forgejo**: `docker compose pull && docker compose up -d`
+- **Update Forgejo (patch/minor on the current major)**: `docker compose pull && docker compose up -d`
 - **Logs**: `docker compose logs -f forgejo`
 - **Manual backup**: `./backup/backup.sh`
 - **List snapshots**: `set -a && . .env && set +a && restic snapshots`
 - **Restore**: `./backup/restore.sh latest`
+
+## Upgrading across a major (LTS to LTS)
+
+Forgejo follows semver since 7.0: each major (`10` → `11` → … → `15`) can
+contain breaking changes. Always read the release notes for every major you
+cross. Direct jumps from any version > 10 to the current LTS are supported.
+
+**Procedure on the VM:**
+
+1. **Backup first** (non-negotiable):
+   ```
+   ./backup/backup.sh
+   ```
+   Verify the snapshot landed in R2 (`restic snapshots`).
+2. **Pull the new images and recreate the containers** (the image tag is
+   already pinned in `docker-compose.yml`):
+   ```
+   docker compose pull
+   docker compose up -d
+   ```
+   Postgres is untouched; Forgejo runs its DB migrations on startup.
+3. **Watch the logs** until the migration finishes and the healthcheck flips
+   to healthy:
+   ```
+   docker compose logs -f forgejo
+   ```
+4. **Post-upgrade admin tasks** (Site Administration UI):
+   - Run **"Sync missed branches from git data to databases"** (branches are
+     mirrored in the DB since v11 to cut git process calls).
+   - Check the runner shows up as **Idle** — bump its image tag in
+     `docker-compose.yml` if the server major moved past its compat window
+     (rule of thumb: keep the runner on a tag ≥ the server-required minimum).
+
+### Notes specific to the v10 → v15 upgrade (current LTS)
+
+- **All users will be re-logged out**: v15 renamed the default cookies to
+  drop the legacy Gitea branding. To preserve existing sessions, set
+  `FORGEJO__security__COOKIE_REMEMBER_NAME: gitea_incredible` in the compose
+  env. Otherwise just expect to log back in.
+- **Custom assets** (themes/CSS): if you ever drop files in
+  `data/forgejo/gitea/custom/public/`, they must move under
+  `…/custom/public/assets/` to be picked up. Not used here today.
+- **Runner**: bump from `runner:6` to `runner:12` (already done in the
+  compose). The existing `.runner` registration file is reused — no need to
+  re-register.
+- **Postgres**: stays on 16, supported. A 16 → 17 bump is a separate manual
+  dump/restore.
 
 ## Ports / firewall
 
