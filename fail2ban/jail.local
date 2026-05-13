@@ -1,0 +1,24 @@
+# Global fail2ban defaults — progressive bans.
+# Override per-jail in jail.d/*.local
+
+[DEFAULT]
+# 10 tries within 5 minutes -> ban
+findtime  = 5m
+maxretry  = 10
+
+# First ban: 1 hour. Then each repeat offense extends it.
+bantime          = 1h
+bantime.increment = true
+bantime.factor    = 4
+bantime.maxtime   = 30d
+bantime.rndtime   = 5m
+
+# Ignore loopback and Tailscale CGNAT range so we never lock ourselves out.
+ignoreip = 127.0.0.1/8 ::1 100.64.0.0/10
+
+# Use systemd journal where possible, fall back to files.
+backend = auto
+
+# Action: nftables. Debian 12 uses nft by default; if you ever switch to
+# iptables, set `banaction = iptables-multiport`.
+banaction = nftables-multiport

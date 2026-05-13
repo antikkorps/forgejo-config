@@ -1,0 +1,29 @@
+# Three jails:
+#   - sshd        : host OpenSSH on port 2222 (Tailscale-only, but defense in depth)
+#   - forgejo-ssh : Forgejo's container OpenSSH on port 22 (public)
+#   - forgejo-web : Forgejo web UI login bruteforce
+
+[sshd]
+enabled = true
+port    = 2222
+# auth.log is the canonical source on Debian.
+logpath = /var/log/auth.log
+
+[forgejo-ssh]
+enabled  = true
+port     = 22
+filter   = sshd
+# Forgejo's container OpenSSH writes to its own log inside the container,
+# but the host journal also captures fail2ban-relevant SSH attempts when
+# the container is launched with json-file logging and we tail it via
+# `docker logs`. Simpler approach: parse the docker JSON log directly.
+logpath  = /var/lib/docker/containers/*/*-json.log
+# Only match the forgejo container's lines.
+# (the sshd filter already requires the canonical "Failed password"/
+# "Invalid user" patterns, so noise from other containers is filtered out.)
+
+[forgejo-web]
+enabled  = true
+port     = http,https
+filter   = forgejo-web
+logpath  = /srv/forgejo-config/data/forgejo/log/forgejo.log
