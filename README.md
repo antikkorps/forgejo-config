@@ -146,6 +146,60 @@ register with a different name (e.g. `home-runner`) and labels
 - **List snapshots**: `set -a && . .env && set +a && restic snapshots`
 - **Restore**: `./backup/restore.sh latest`
 
+## fail2ban — check and manage bans
+
+Three jails are deployed (config in `fail2ban/`, deployed to `/etc/fail2ban/`):
+
+| Jail          | Source                                              | Protects                |
+|---------------|-----------------------------------------------------|-------------------------|
+| `sshd`        | `/var/log/auth.log`                                 | Host admin SSH (:2222)  |
+| `forgejo-ssh` | `/var/lib/docker/containers/*/*-json.log`           | Forgejo container SSH (:22) |
+| `forgejo-web` | `data/forgejo/gitea/log/gitea.log`                  | Forgejo web login       |
+
+Policy: **10 failures within 10 min** → ban. First ban 1h, then ×4 each
+repeat (1h → 4h → 16h → … capped at 30d). Tailscale CGNAT (`100.64.0.0/10`)
+and loopback are whitelisted so you can't lock yourself out.
+
+### Day-to-day commands
+
+```
+# Overview of all jails
+sudo fail2ban-client status
+
+# Details for one jail (currently failed, total failed, banned IPs)
+sudo fail2ban-client status forgejo-web
+sudo fail2ban-client status forgejo-ssh
+sudo fail2ban-client status sshd
+
+# Tail fail2ban's own log (ban/unban events)
+sudo tail -f /var/log/fail2ban.log
+
+# Manually unban an IP that got caught by mistake
+sudo fail2ban-client set forgejo-web unbanip 1.2.3.4
+
+# Manually ban an IP
+sudo fail2ban-client set forgejo-web banip 1.2.3.4
+
+# Reload after editing /etc/fail2ban/*
+sudo systemctl reload fail2ban
+
+# Validate a filter against the live log
+sudo fail2ban-regex /srv/forgejo-config/data/forgejo/gitea/log/gitea.log \
+    /etc/fail2ban/filter.d/forgejo-web.conf
+```
+
+### Updating fail2ban config
+
+Source of truth lives in this repo under `fail2ban/`. After editing:
+
+```
+cd /srv/forgejo-config && git pull
+sudo cp fail2ban/jail.local              /etc/fail2ban/jail.local
+sudo cp fail2ban/jail.d/forgejo.local    /etc/fail2ban/jail.d/forgejo.local
+sudo cp fail2ban/filter.d/forgejo-web.conf /etc/fail2ban/filter.d/forgejo-web.conf
+sudo systemctl reload fail2ban
+```
+
 ## Upgrading across a major (LTS to LTS)
 
 Forgejo follows semver since 7.0: each major (`10` → `11` → … → `15`) can
