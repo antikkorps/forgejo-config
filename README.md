@@ -1,7 +1,8 @@
 # Forgejo on Hetzner
 
-Self-hosted Forgejo behind Cloudflare Tunnel, with PostgreSQL,
-encrypted restic backups to Cloudflare R2, and Tailscale-only admin SSH.
+Self-hosted Forgejo on a Hetzner VM, fronted by Caddy with Let's Encrypt
+TLS, PostgreSQL, encrypted restic backups to Cloudflare R2, and
+Tailscale-only admin SSH.
 
 ## Accessing the server
 
@@ -9,7 +10,7 @@ encrypted restic backups to Cloudflare R2, and Tailscale-only admin SSH.
 |---------|-----|
 | **Admin SSH** | `ssh -p 2222 root@<tailscale-name-or-ip>` (Tailscale only — port 2222 is closed on the public IP) |
 | **Git over SSH** | `git clone git@git.fvienot.link:user/repo.git` (port 22, public) |
-| **Web UI** | https://git.fvienot.link (Cloudflare Tunnel — no public 80/443) |
+| **Web UI** | https://git.fvienot.link (Caddy + Let's Encrypt on 80/443) |
 
 The host SSH daemon was moved from port 22 to **2222** during bootstrap so
 that port 22 is free for Forgejo's built-in SSH server. Port 2222 is only
@@ -23,21 +24,18 @@ If you ever lose Tailscale access, recovery requires Hetzner console access
 ```
                 Internet
                    │
-                   ▼
-         Cloudflare (TLS edge)
-                   │
         ┌──────────┴──────────┐
         │                     │
-     git push                 ▼
-     (SSH :22)        Cloudflare Tunnel
+     git push           HTTPS (:443)
+     (SSH :22)          Cloudflare DNS-only
         │                     │
         ▼                     ▼
    ┌────────────────────────────────┐
    │  Hetzner VM (CX22)             │
    │                                │
-   │  forgejo ── postgres           │
+   │  caddy (TLS, Let's Encrypt)    │
    │     │                          │
-   │   caddy ◄── cloudflared        │
+   │  forgejo ── postgres           │
    │                                │
    │  cron: restic ──► R2 (encrypted)│
    └────────────────────────────────┘
@@ -51,9 +49,9 @@ If you ever lose Tailscale access, recovery requires Hetzner console access
 
 | Path | Purpose |
 |------|---------|
-| `docker-compose.yml` | forgejo + postgres + caddy + cloudflared |
+| `docker-compose.yml` | forgejo + postgres + caddy + runner |
 | `.env.example`       | secrets template — copy to `.env` |
-| `caddy/Caddyfile`    | HTTP-only reverse proxy (TLS at CF edge) |
+| `caddy/Caddyfile`    | reverse proxy + automatic Let's Encrypt TLS |
 | `backup/backup.sh`   | nightly: pg_dump + restic → R2 |
 | `backup/restore.sh`  | restore from a snapshot |
 | `backup/crontab`     | cron schedule for backup + weekly check |
@@ -64,9 +62,10 @@ If you ever lose Tailscale access, recovery requires Hetzner console access
 1. **Create Hetzner CX22**, Debian 12, attach a 20 GB volume mounted at `/opt/forgejo/data` (optional but recommended).
 2. **Run bootstrap** as root: `bash scripts/bootstrap.sh`.
 3. **Tailscale**: `tailscale up --ssh`, accept in browser.
-4. **Cloudflare Tunnel** (Zero Trust → Networks → Tunnels):
-   - Create tunnel, copy the docker token into `.env` as `CLOUDFLARE_TUNNEL_TOKEN`.
-   - Public hostname: `git.fvienot.link` → service `http://caddy:80`.
+4. **Cloudflare DNS**: create an `A` record for `git.fvienot.link` → VM public IP,
+   **DNS-only** (grey cloud), so Caddy can complete the ACME challenge on :80/:443.
+   Open ports 80 and 443 on the Hetzner firewall.
+   Set `ACME_EMAIL` in `.env` (used for Let's Encrypt renewal notices).
 5. **R2 bucket**: create `forgejo-backups`, generate an S3-compatible API token,
    fill `RESTIC_*` and `AWS_*` in `.env`. Generate a strong `RESTIC_PASSWORD`
    and **store it outside the VM** (without it, backups are unrecoverable).
@@ -86,7 +85,7 @@ The runner needs a one-time registration token from your Forgejo instance.
 
 1. Start everything **except** the runner first:
    ```
-   docker compose up -d forgejo postgres caddy cloudflared
+   docker compose up -d forgejo postgres caddy
    ```
 2. Log in as admin → **Site Administration → Actions → Runners → Create new Runner** → copy the token.
 3. Register the runner (writes `.runner` into `./data/runner`):
@@ -126,15 +125,11 @@ register with a different name (e.g. `home-runner`) and labels
       For org-wide enforcement: set `[service] REQUIRE_SIGNIN_VIEW = true`
       (already on) and require 2FA via `[security] DEFAULT_ENABLE_TIMETRACKING`
       style settings, or simply audit your few users.
-- [ ] **Cloudflare WAF — geo-block outside France**
-      Zero Trust → Cloudflare dashboard → your domain → **Security → WAF → Custom rules**:
-      ```
-      (ip.geoip.country ne "FR" and http.host eq "git.fvienot.link")
-      → Block
-      ```
-      Add an exception if you travel: `or ip.src in {YOUR_HOME_IP}`.
-      Also enable **Bot Fight Mode** (Security → Bots).
-      Note: this does NOT block git SSH (port 22 bypasses Cloudflare).
+- [ ] **Geo-block at Hetzner / Caddy level if desired**
+      Since Cloudflare runs in DNS-only mode, the CF WAF is bypassed. If you
+      want a country block, do it at the Hetzner firewall (IP-range based) or
+      add Caddy `@geo` matchers via the `caddy-maxmind-geolocation` module.
+      Note: this does NOT block git SSH (port 22).
 - [ ] **R2 bucket hardening**
       - Use a **write-only token** for the VM (no `Object:Delete`).
       - Enable **Object Lock** (Compliance mode, 30 days) so even a compromised
@@ -204,7 +199,8 @@ cross. Direct jumps from any version > 10 to the current LTS are supported.
 |------|-------|---------|
 | 22   | public | Forgejo SSH (git clone/push) |
 | 2222 | Tailscale only | Host admin SSH |
-| 80/443 | **closed** | All web traffic via Cloudflare Tunnel |
+| 80   | public | Caddy — HTTP→HTTPS redirect + ACME HTTP-01 |
+| 443  | public | Caddy — HTTPS (Let's Encrypt) |
 
 ## Renovate
 

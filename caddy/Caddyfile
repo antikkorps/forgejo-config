@@ -1,7 +1,12 @@
-# Caddy sits behind cloudflared (TLS terminated at Cloudflare edge).
-# It serves plain HTTP on the internal network — no certificates needed here.
+# Caddy terminates TLS directly (Let's Encrypt via HTTP-01/TLS-ALPN).
+# Cloudflare DNS for {$FORGEJO_DOMAIN} must be in DNS-only mode (grey cloud)
+# so the ACME challenge reaches this server.
 
-:80 {
+{
+	email {$ACME_EMAIL}
+}
+
+{$FORGEJO_DOMAIN} {
 	encode zstd gzip
 
 	# Larger uploads for git push / LFS
@@ -12,6 +17,6 @@
 	reverse_proxy forgejo:3000 {
 		header_up X-Real-IP {remote_host}
 		header_up X-Forwarded-For {remote_host}
-		header_up X-Forwarded-Proto https
+		header_up X-Forwarded-Proto {scheme}
 	}
 }

@@ -39,11 +39,14 @@ sed -i 's/^#\?Port .*/Port 2222/' /etc/ssh/sshd_config
 sed -i 's/^#\?PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config
 systemctl restart ssh
 
-# --- firewall: allow Forgejo Git SSH (22) + HTTP-only via cloudflared (no 80/443 needed)
+# --- firewall: Forgejo Git SSH (22) + HTTP/HTTPS for Caddy (80/443).
 #     Admin SSH (2222) is restricted to the Tailscale interface only.
 ufw default deny incoming
 ufw default allow outgoing
 ufw allow 22/tcp comment 'forgejo git ssh'
+ufw allow 80/tcp comment 'caddy http (ACME + redirect)'
+ufw allow 443/tcp comment 'caddy https'
+ufw allow 443/udp comment 'caddy http/3'
 ufw allow in on tailscale0 to any port 2222 proto tcp comment 'admin ssh via tailscale'
 ufw --force enable
 

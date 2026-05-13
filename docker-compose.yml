@@ -98,25 +98,17 @@ services:
     container_name: forgejo-caddy
     restart: unless-stopped
     logging: *default-logging
+    environment:
+      FORGEJO_DOMAIN: ${FORGEJO_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
       - caddy-config:/config
-    deploy:
-      resources:
-        limits:
-          memory: 128M
-    networks:
-      - web
-
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    container_name: forgejo-cloudflared
-    restart: unless-stopped
-    logging: *default-logging
-    command: tunnel --no-autoupdate run
-    environment:
-      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
     deploy:
       resources:
         limits:
