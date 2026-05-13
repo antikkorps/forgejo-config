@@ -2,8 +2,8 @@
 # Override per-jail in jail.d/*.local
 
 [DEFAULT]
-# 10 tries within 5 minutes -> ban
-findtime  = 5m
+# 10 tries within 10 minutes -> ban
+findtime  = 10m
 maxretry  = 10
 
 # First ban: 1 hour. Then each repeat offense extends it.
