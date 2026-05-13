@@ -1,6 +1,10 @@
 # Versions: pinned to major. When you add Renovate, switch to minor pins
-# (e.g. forgejo:10.1) and let Renovate propose bumps. Postgres major upgrades
+# (e.g. forgejo:15.0) and let Renovate propose bumps. Postgres major upgrades
 # (16 -> 17) are NEVER auto-safe — they require a manual dump+restore.
+#
+# Forgejo: track the current LTS major (15.x = LTS released 2026-04, supported
+# until 2027-07). Bump to the next LTS when it ships. Forgejo Runner must be
+# kept on a version compatible with the server (>=12.5 for v15 features).
 
 x-logging: &default-logging
   driver: json-file
@@ -10,7 +14,7 @@ x-logging: &default-logging
 
 services:
   forgejo:
-    image: codeberg.org/forgejo/forgejo:10
+    image: codeberg.org/forgejo/forgejo:15
     container_name: forgejo
     restart: unless-stopped
     logging: *default-logging
@@ -123,7 +127,7 @@ services:
   # Forgejo Actions runner (light CI on the VM).
   # Heavy jobs (Zap, SonarCloud) run on the home server with a separate runner.
   runner:
-    image: code.forgejo.org/forgejo/runner:6
+    image: code.forgejo.org/forgejo/runner:12
     container_name: forgejo-runner
     restart: unless-stopped
     logging: *default-logging
