@@ -26,4 +26,4 @@ logpath  = /var/lib/docker/containers/*/*-json.log
 enabled  = true
 port     = http,https
 filter   = forgejo-web
-logpath  = /srv/forgejo-config/data/forgejo/log/forgejo.log
+logpath  = /srv/forgejo-config/data/forgejo/gitea/log/gitea.log
