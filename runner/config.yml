@@ -23,7 +23,9 @@ cache:
   dir: /data/cache
 
 container:
-  network: forgejo_internal
+  # Compose names networks <project>_<network>; the project name is pinned to
+  # `forgejo-config` in docker-compose.yml, so this matches on every machine.
+  network: forgejo-config_internal
   privileged: false
   options: ""
   workdir_parent: /workspace
