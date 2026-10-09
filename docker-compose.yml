@@ -6,6 +6,10 @@
 # until 2027-07). Bump to the next LTS when it ships. Forgejo Runner must be
 # kept on a version compatible with the server (>=12.5 for v15 features).
 
+# Pinned so network names do not depend on the checkout directory:
+# runner/config.yml attaches jobs to `forgejo-config_internal`.
+name: forgejo-config
+
 x-logging: &default-logging
   driver: json-file
   options:

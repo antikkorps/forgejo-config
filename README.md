@@ -100,7 +100,7 @@ The runner needs a one-time registration token from your Forgejo instance.
        --name vm-runner \
        --labels docker:docker://node:24-bookworm
    ```
-   (Run this on the same docker network: add `--network forgejo_web` if needed,
+   (Run this on the same docker network: add `--network forgejo-config_web` if needed,
    or use the public URL `https://git.fvienot.link` instead of the internal one.)
 4. Now bring up the runner: `docker compose up -d runner`
 5. Verify it appears as **Idle** in the admin Runners page.

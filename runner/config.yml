@@ -23,7 +23,9 @@ cache:
   dir: /data/cache
 
 container:
-  network: forgejo_internal
+  # Compose names networks <project>_<network>; the project name is pinned to
+  # `forgejo-config` in docker-compose.yml, so this matches on every machine.
+  network: forgejo-config_internal
   privileged: false
   options: ""
   workdir_parent: /workspace
@@ -32,4 +34,6 @@ container:
   force_pull: false
 
 host:
-  workdir_parent: /workspace
+  # Where the runner itself clones actions (actions/checkout…). It runs as
+  # 1000:1000, and /data is the only place it can write (./data/runner).
+  workdir_parent: /data/workspace
