@@ -34,4 +34,6 @@ container:
   force_pull: false
 
 host:
-  workdir_parent: /workspace
+  # Where the runner itself clones actions (actions/checkout…). It runs as
+  # 1000:1000, and /data is the only place it can write (./data/runner).
+  workdir_parent: /data/workspace
